@@ -3,7 +3,6 @@ import readDatabase
 import os
 import numpy as np
 
-
 class ModelArchitecture(tf.keras.Model):
     def __init__(self):
         # super() usecases: The super() builtin returns a proxy object (temporary object of the superclass) that allows us to access methods of the base class. In Python, super() has two major use cases:
@@ -11,16 +10,27 @@ class ModelArchitecture(tf.keras.Model):
         # Working with Multiple Inheritance  https://www.programiz.com/python-programming/methods/built-in/super
         
         super(ModelArchitecture, self).__init__()
-        self.conv2 = tf.keras.layers.Conv2D(filters=32, kernel_size=3, activation='relu')
-        self.flatten = tf.keras.layers.Flatten()
-        self.d1 = tf.keras.layers.Dense(128, activation='relu')
-        self.d2 = tf.keras.layers.Dense(10)
+        # model from paper
+        self.conv1 = tf.keras.layers.Conv2D(filters=64, kernel_size=3,padding='same', activation='relu')
+        self.pool1 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))
+        self.conv2 = tf.keras.layers.Conv2D(filters=32, kernel_size=5, strides=1, activation='relu')
+        self.pool2 = tf.keras.layers.MaxPooling2D(pool_size=2,strides=2)
+        self.flat = tf.keras.layers.Flatten()
+        self.d1 = tf.keras.layers.Dense(100, activation='relu')
+        self.d2 = tf.keras.layers.Dense(84, activation='relu')
+        self.d3 = tf.keras.layers.Dense(10)
 
-    def call(self,x):
+    @tf.function(input_signature=[tf.TensorSpec(shape=(None,28, 28,1), dtype=tf.float32)])
+    def call(self,x, mask=None):
+        x = self.conv1(x)
+        x = self.pool1(x)
         x = self.conv2(x)
-        x = self.flatten(x)
+        x = self.pool2(x)
+        x = self.flat(x)
         x = self.d1(x)
-        return self.d2(x)
+        x = self.d2(x)
+        x = self.d3(x)   
+        return x
 
 # Compiles a function into a callable TensorFlow graph.
 class ModelTraining(ModelArchitecture):
@@ -33,7 +43,7 @@ class ModelTraining(ModelArchitecture):
         self.trainAccuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
         self.testLoss = tf.keras.metrics.Mean(name='test_loss')
         self.testAccuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
-        
+
     # A decorator takes in a function, adds some functionality and returns it. 
     @tf.function
     def trainingStep(self,data,labels):
@@ -45,6 +55,7 @@ class ModelTraining(ModelArchitecture):
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
         self.trainLoss(loss)
         self.trainAccuracy(labels,predictions)
+
     @tf.function
     def testingStep(self,data,labels):
         predictions = self.model(data,training=False)
@@ -53,7 +64,7 @@ class ModelTraining(ModelArchitecture):
         self.testAccuracy(labels,predictions)
 
 if __name__ == "__main__":
-    Epochs = 5
+    Epochs = 2
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')
     [trainData, trainLabels] = readDatabase.readDatabase(path)
     [testData, testLabels] = readDatabase.readDatabase(path, 'test')
@@ -64,15 +75,21 @@ if __name__ == "__main__":
     trainDataset = tf.data.Dataset.from_tensor_slices((trainData, trainLabels)).shuffle(10000).batch(32)
     testDataset = tf.data.Dataset.from_tensor_slices((testData, testLabels)).batch(32)
 
+    model = ModelArchitecture()
+
+    modelPath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'models')
+
+    tf.saved_model.save(
+    model, modelPath)
+
+    modelTraining = ModelTraining()
+    
+
     for epoch in range(Epochs):
-        modelTraining = ModelTraining()
-        
         modelTraining.trainLoss.reset_states()
         modelTraining.trainAccuracy.reset_states()
         modelTraining.testLoss.reset_states()
         modelTraining.testAccuracy.reset_states()
-
-        
 
         for trainData, trainLabels in trainDataset:
             modelTraining.trainingStep(trainData, trainLabels)
