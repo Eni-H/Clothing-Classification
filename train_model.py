@@ -6,7 +6,8 @@ from ModelTraining import*
 
 if __name__ == "__main__":
     Epochs = 3
-    path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'data')
+    #os.path.dirname(os.path.realpath(__file__))
+    path = 'data'
     [train_data, train_labels] = read_database.read_database(path)
     [test_data, test_labels] = read_database.read_database(path, 'test')
     train_data, test_data = train_data / 255.0, test_data / 255.0
@@ -16,14 +17,11 @@ if __name__ == "__main__":
     train_dataset = tf.data.Dataset.from_tensor_slices((train_data, train_labels)).shuffle(10000).batch(32)
     test_dataset = tf.data.Dataset.from_tensor_slices((test_data, test_labels)).batch(32)
 
-    modelArchitecture = ModelArchitecture()
     modelTraining = ModelTraining()
 
-    modelPath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'models')
-
-    tf.saved_model.save(modelArchitecture, modelPath)
+    modelPath = 'models'
     
-
+    init_loss = 100
     for epoch in range(Epochs):
         modelTraining.train_loss.reset_states()
         modelTraining.train_accuracy.reset_states()
@@ -42,4 +40,9 @@ if __name__ == "__main__":
                             modelTraining.train_accuracy.result() * 100,
                             modelTraining.test_loss.result(),
                             modelTraining.test_accuracy.result() * 100))
+
+        #modelArchitecture = ModelArchitecture()
+        if init_loss < modelTraining.test_loss.result():
+            tf.saved_model.save(modelTraining.modelArchitecture, modelPath)
+            init_loss = modelTraining.test_loss.result()
 
