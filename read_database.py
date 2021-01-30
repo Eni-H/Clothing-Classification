@@ -1,7 +1,7 @@
 import os
 import gzip
 import numpy as np
-import matplotlib.pyplot  as plt
+import matplotlib.pyplot as plt
 
 def read_database(path, kind='train'):
     

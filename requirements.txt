@@ -4,3 +4,4 @@ conda install os
 conda install gzip
 conda install matplotlib
 conda install keras
+pip install sklearn
