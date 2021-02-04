@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score as acc
 from sklearn import metrics
 from read_database import*
 
-class QuantizeModel():
+class ModelQuantization():
     def __init__(self,model_path,data_path=None):
         self.model_path = model_path
         self.data_path = data_path
@@ -78,7 +78,7 @@ class QuantizeModel():
 if __name__ == "__main__":
     
     quantization_type = 'int8'
-    quantizeModel = QuantizeModel('models','data')
+    quantizeModel = ModelQuantization('models','data')
     quantizeModel.quantize_model(quantization_type)
     quantizeModel.test_converter()
     

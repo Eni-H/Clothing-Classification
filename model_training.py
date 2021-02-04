@@ -1,4 +1,4 @@
-from ModelArchitecture import*
+from model_architecture import*
 
 # Compiles a function into a callable TensorFlow graph.
 class ModelTraining(ModelArchitecture):

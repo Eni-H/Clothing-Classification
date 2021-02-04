@@ -2,14 +2,16 @@ import tensorflow as tf
 import read_database
 import os
 import numpy as np
-from ModelTraining import*
+from model_training import*
+from model_quantization import*
 
 if __name__ == "__main__":
+    ##train model 
     Epochs = 3
     #os.path.dirname(os.path.realpath(__file__))
     path = 'data'
-    [train_data, train_labels] = read_database.read_database(path)
-    [test_data, test_labels] = read_database.read_database(path, 'test')
+    [train_data, train_labels] = read_database(path)
+    [test_data, test_labels] = read_database(path, 'test')
     train_data, test_data = train_data / 255.0, test_data / 255.0
     train_data = train_data[:,:,:,tf.newaxis].astype("float32")
     test_data = test_data[..., tf.newaxis].astype("float32")
@@ -41,8 +43,12 @@ if __name__ == "__main__":
                             modelTraining.test_loss.result(),
                             modelTraining.test_accuracy.result() * 100))
 
-        #modelArchitecture = ModelArchitecture()
         if init_loss < modelTraining.test_loss.result():
             tf.saved_model.save(modelTraining.modelArchitecture, modelPath)
             init_loss = modelTraining.test_loss.result()
-
+       
+    ##quantize model
+    quantization_type = 'int8'
+    quantizeModel = ModelQuantization('models','data')
+    quantizeModel.quantize_model(quantization_type)
+    quantizeModel.test_converter()
