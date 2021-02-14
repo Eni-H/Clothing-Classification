@@ -43,7 +43,7 @@ if __name__ == "__main__":
                             modelTraining.test_loss.result(),
                             modelTraining.test_accuracy.result() * 100))
 
-        if init_loss < modelTraining.test_loss.result():
+        if init_loss > modelTraining.test_loss.result():
             tf.saved_model.save(modelTraining.modelArchitecture, modelPath)
             init_loss = modelTraining.test_loss.result()
        
